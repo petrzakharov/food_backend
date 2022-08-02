@@ -16,7 +16,7 @@ class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
     code = models.CharField(max_length=50, unique=True)
     slug = models.SlugField()
-    # как должен формироваться слаг? +
+    # как должен формироваться слаг? + в настройках админки prepopulated field
     # добавить при сохранении валидацию code, проверка из какой либо либы с HEX-кодами
 
 
@@ -34,6 +34,11 @@ class IngredientAmount(models.Model):
 class FavoriteRecipe(models.Model):
     user = models.ForeignKey('User', related_name='favorite_recipes', on_delete=models.CASCADE)
     recipe = models.ForeignKey('Recipe', related_name='favorite_recipes', on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'recipe'], name='unique favorite recipe')
+        ]
     # сочетание должно быть уникальнным
 
 
@@ -41,12 +46,22 @@ class ShoppingList(models.Model):
     user = models.ForeignKey('User', related_name='shopping_list', on_delete=models.CASCADE)
     recipe = models.ForeignKey('Recipe', related_name='shoppint_list', on_delete=models.CASCADE)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'recipe'], name='unique recipe in shopping list')
+        ]
+
     #сочетание должно быть уникальным
 
 
 class Follow(models.Model):
     author = models.ForeignKey('User', related_name='recipe_author', on_delete=models.CASCADE)
     follower = models.ForeignKey('User', related_name='follower', on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['author', 'follower'], name='unique follow link')
+        ]
 
     # валидация при сохранении: нельзя подписаться на самого себя
     # сочетание должно быть уникальным
