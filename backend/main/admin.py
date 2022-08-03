@@ -5,18 +5,18 @@ from .models import Tag, Recipe, Ingredient, IngredientAmount, FavoriteRecipe, S
 
 class TagAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'slug',)
-    empty_value_display = '-пусто-'
     search_fields = ('name', )
     prepopulated_fields = {'slug': ('name',)}
+    list_filter = ('name',)
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author', 'count_follow_recipe',)
-    empty_value_display = '-пусто-'
+    list_display = ('name', 'author', 'count_follow_recipe')
     search_fields = ('name',)
+    list_filter = ('name', 'author__username', 'tag')
 
     def author(self, obj):
-        return obj.author__name
+        return obj.author.username
     # TODO проверить что корректно отображается имя автора
 
     def count_follow_recipe(self, obj):
@@ -24,7 +24,21 @@ class RecipeAdmin(admin.ModelAdmin):
     # TODO проверить что работает
 
 
+class FavoriteRecipeAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'user', 'recipe')
 
+
+class ShoppingListAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'user', 'recipe')
+
+
+class FollowAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'author', 'follower')
+
+
+class IngredientAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'measurement_unit')
+    list_filter = ('name',)
 
 # Модель рецептов:
 # В списке рецептов вывести название и автора рецепта.
@@ -45,9 +59,9 @@ class RecipeAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Tag, TagAdmin)
-admin.site.register(Recipe)
-admin.site.register(Ingredient)
+admin.site.register(Recipe, RecipeAdmin)
+admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(IngredientAmount)
-admin.site.register(FavoriteRecipe)
-admin.site.register(ShoppingList)
-admin.site.register(Follow)
+admin.site.register(FavoriteRecipe, FavoriteRecipeAdmin)
+admin.site.register(ShoppingList, ShoppingListAdmin)
+admin.site.register(Follow, FollowAdmin)
