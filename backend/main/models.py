@@ -2,7 +2,8 @@ from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import User
+
+User = get_user_model()
 
 
 class Recipe(models.Model):
@@ -115,5 +116,3 @@ class Follow(models.Model):
     def clean(self):
         if self.author == self.follower:
             raise ValidationError(message='You cant follow yourself')
-
-    # TODO проверить валидацию подписки на самого себя
