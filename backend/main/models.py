@@ -2,8 +2,7 @@ from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-
-User = get_user_model()
+from users.models import User
 
 
 class Recipe(models.Model):
@@ -57,8 +56,8 @@ class Ingredient(models.Model):
 
 
 class IngredientAmount(models.Model):
-    ingredient = models.ForeignKey('Ingredient', related_name='ingredient_amount', on_delete=models.PROTECT)
-    recipe = models.ForeignKey('Recipe', related_name='ingredient_amount', on_delete=models.PROTECT)
+    ingredient = models.ForeignKey('Ingredient', related_name='ingredient_amount', on_delete=models.CASCADE)
+    recipe = models.ForeignKey('Recipe', related_name='ingredient_amount', on_delete=models.CASCADE)
     amount = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
 
     class Meta:
@@ -70,8 +69,8 @@ class IngredientAmount(models.Model):
 
 
 class FavoriteRecipe(models.Model):
-    user = models.ForeignKey(User, related_name='favorite_recipes', on_delete=models.CASCADE)
-    recipe = models.ForeignKey('Recipe', related_name='favorite_recipes', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='favorite_recipes', on_delete=models.PROTECT)
+    recipe = models.ForeignKey('Recipe', related_name='favorite_recipes', on_delete=models.PROTECT)
 
     class Meta:
         constraints = [
@@ -100,12 +99,12 @@ class ShoppingList(models.Model):
 
 
 class Follow(models.Model):
-    author = models.ForeignKey(User, related_name='recipe_author', on_delete=models.CASCADE)
+    author = models.ForeignKey(User, related_name='author', on_delete=models.CASCADE)
     follower = models.ForeignKey(User, related_name='follower', on_delete=models.CASCADE)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['author', 'follower'], name='unique follow link')
+            models.UniqueConstraint(fields=['author', 'follower'], name='unique_follow')
         ]
         verbose_name = 'Подписчики'
         verbose_name_plural = 'Подписчики'
