@@ -4,7 +4,7 @@ from main.models import Follow
 from .models import User
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserUpdatedSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:

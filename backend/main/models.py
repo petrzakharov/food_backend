@@ -31,7 +31,6 @@ class Tag(models.Model):
         validators=[RegexValidator(regex='^#(?:[0-9a-fA-F]{3}){1,2}$', message='Add correct HEX code')]
     )
     slug = models.SlugField()
-    # TODO проверить что работает валидатор regex
 
     class Meta:
         ordering = ['-name', ]
@@ -69,8 +68,8 @@ class IngredientAmount(models.Model):
 
 
 class FavoriteRecipe(models.Model):
-    user = models.ForeignKey(User, related_name='favorite_recipes', on_delete=models.PROTECT)
-    recipe = models.ForeignKey('Recipe', related_name='favorite_recipes', on_delete=models.PROTECT)
+    user = models.ForeignKey(User, related_name='favorite_recipes', on_delete=models.CASCADE)
+    recipe = models.ForeignKey('Recipe', related_name='favorite_recipes', on_delete=models.CASCADE)
 
     class Meta:
         constraints = [
