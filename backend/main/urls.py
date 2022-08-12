@@ -12,5 +12,6 @@ router.register('recipes', RecipesViewSet, basename='recipes')
 urlpatterns = [
     path('', include(router.urls)),
     path('users/subscriptions/', FollowViewSet.as_view({'get': 'list'}), name='subscriptions'),
-    path('users/<int:id>/subscribe/', FollowViewSet.as_view({'post': 'create', 'delete': 'destroy'}), name='subscribe')
+    path('users/<int:id>/subscribe/', FollowViewSet.as_view({'post': 'create', 'delete': 'destroy'}), name='subscribe'),
+    # path('recipe/<int:id>/favorite/', FavoriteRecipeViewSet.as_view({'post': 'create', 'delete': 'destroy'}), name='favorite')
 ]

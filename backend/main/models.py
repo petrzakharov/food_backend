@@ -7,6 +7,7 @@ from users.models import User
 
 class Recipe(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='receipts')
+    # TODO  исправить ошибку в нейминге receipts
     name = models.CharField(max_length=100, unique=True)
     image = models.ImageField(upload_to='pictures/', blank=False, null=False)
     description = models.TextField()
