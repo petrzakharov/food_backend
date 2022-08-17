@@ -85,7 +85,7 @@ class FavoriteRecipe(models.Model):
 
 class ShoppingList(models.Model):
     user = models.ForeignKey(User, related_name='shopping_list', on_delete=models.CASCADE)
-    recipe = models.ForeignKey('Recipe', related_name='shoppint_list', on_delete=models.CASCADE)
+    recipe = models.ForeignKey('Recipe', related_name='shopping_list', on_delete=models.CASCADE)
 
     class Meta:
         constraints = [
