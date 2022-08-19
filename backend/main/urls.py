@@ -20,7 +20,7 @@ urlpatterns = [
         name='favorite'
     ),
     path(
-        'recipes/<int:id>/shopping_cart', ShoppingListViewset.as_view({'post': 'create', 'delete': 'destroy'}),
+        'recipes/<int:id>/shopping_cart/', ShoppingListViewset.as_view({'post': 'create', 'delete': 'destroy'}),
         name='shopping_list'
     ),
     path(

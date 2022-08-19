@@ -1,14 +1,21 @@
-from django.shortcuts import render
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
+
+from main.utils import CustomSetPagination
 from .models import User
 from rest_framework.response import Response
-from rest_framework import generics, status
+from rest_framework import status
 from .serializers import UserUpdatedSerializer
-from rest_framework.pagination import PageNumberPagination
 
 
 class UserViewSet(DjoserUserViewSet):
+    pagination_class = CustomSetPagination
+    # OK
+    def get_permissions(self):
+        if self.action == 'list':
+            return AllowAny(),
+        return super().get_permissions()
 
     @action(detail=True, methods=['get'])
     def me(self, request, *args, **kwargs):
@@ -26,8 +33,3 @@ class UserViewSet(DjoserUserViewSet):
         page = self.paginate_queryset(queryset)
         serializer = UserUpdatedSerializer(page, many=True, context={'author': self.request.user.id})
         return self.get_paginated_response(serializer.data)
-
-        # http://www.tomchristie.com/rest-framework-2-docs/api-guide/viewsets
-        # https://ilovedjango.com/django/rest-api-framework/views/viewset/
-        # https://ifihan.hashnode.dev/customizing-urls-in-djoser
-        # TODO Проверить что можно создать пользователя без авторизации

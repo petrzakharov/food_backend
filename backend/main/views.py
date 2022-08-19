@@ -3,41 +3,42 @@ from django.shortcuts import render, get_object_or_404
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, viewsets, serializers, status
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-
+from django.db.models import Case, Value, When, BooleanField, CharField, Q
 from main.models import Tag, Follow, Ingredient, Recipe, FavoriteRecipe, ShoppingList, IngredientAmount
 from main.serializers import TagSerializer, FollowSerializer, IngredientSerializer, RecipeSerializer, \
     RecipeCreateSerializer, RecipeFollowSerializer
 from users.models import User
+from .permissions import OwnerOrReadOnly, ReadOnly
+
+from .utils import CustomSetPagination
 
 
 class TagViewSet(mixins.ListModelMixin,
                  mixins.RetrieveModelMixin,
                  viewsets.GenericViewSet):
     pagination_class = None
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (AllowAny,)
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    # OK
 
 
 class FollowViewSet(viewsets.ModelViewSet):
-    permission_classes = (IsAuthenticated,)
     serializer_class = FollowSerializer
-
-    # TODO добавить поддержку query параметров
+    pagination_class = CustomSetPagination
+    permission_classes = (IsAuthenticated,)
+    # OK
 
     def get_queryset(self):
         followers = Follow.objects.filter(author=self.request.user).values('follower')
         return User.objects.filter(id__in=followers)
 
-    # get_queryset запрашивается когда нужен список объектов
-    # когда действия производятся с одним объектом то запрашивается get_object
-
     def get_serializer_context(self):
         return {
             'author': self.request.user,
+            'request': self.request
         }
 
     def destroy(self, request, *args, **kwargs):
@@ -61,24 +62,46 @@ class FollowViewSet(viewsets.ModelViewSet):
 
 
 class IngredientsViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    # TODO добавить сортировку/фильтрацию по параметрам
+
     serializer_class = IngredientSerializer
     pagination_class = None
-    filter_backends = (DjangoFilterBackend, filters.SearchFilter,
-                       filters.OrderingFilter)
-    # search_fields = ('^name',)
+    permission_classes = (AllowAny,)
 
     def get_queryset(self):
-        return Ingredient.objects.filter(
-            name__istartswith=self.request.query_params.get('name', '')
-        )
+        name = self.request.query_params.get('name', None)
+        if name:
+            return Ingredient.objects.filter(name__istartswith=name)
+        return Ingredient.objects.all()
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
-    # TODO Добавить фильтрацию по параметрам
-    # TODO Должно быть доступно только авторизованному пользователю
+    # TODO POST доступен только авторизованному пользователю, GET доступен всем, PATCH и DELETE доступно автору (
+    #  проверить)
     queryset = Recipe.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete']
+    permission_classes = (OwnerOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('author',)
+    pagination_class = CustomSetPagination
+
+    def get_queryset(self):
+        params = dict(self.request.query_params)
+        queryset = Recipe.objects.all()
+        is_favorited = self.request.user if params.get('is_favorited', None) else None
+        is_in_shopping_cart = self.request.user if params.get('is_in_shopping_cart', None) else None
+        tags = list(params.get('tags')) if params.get('tags', None) else []
+        queryset = queryset.filter(
+            Q(shopping_list__user=is_in_shopping_cart) &
+            Q(favorite_recipes__user=is_favorited)
+        )
+        if tags:
+            return queryset.filter(Q(tag__slug__in=tags))
+        return queryset
+
+    def get_permissions(self):
+        if self.action == 'retrieve':
+            return ReadOnly(),
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action in ['create', 'partial_update']:
@@ -108,12 +131,11 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
 
 class FavoriteRecipeViewSet(viewsets.ModelViewSet):
+    # OK
     queryset = FavoriteRecipe.objects.all()
     serializer_class = RecipeFollowSerializer
     http_method_names = ['post', 'delete']
-    permission_classes = [IsAuthenticated]
-
-    # TODO только для авторизованных пользователей
+    permission_classes = (IsAuthenticated,)
 
     def create(self, request, *args, **kwargs):
         recipe = get_object_or_404(Recipe, id=self.kwargs.get('id'))
@@ -137,9 +159,10 @@ class FavoriteRecipeViewSet(viewsets.ModelViewSet):
 
 
 class ShoppingListViewset(viewsets.ModelViewSet):
+    # OK
     serializer_class = RecipeFollowSerializer
     queryset = ShoppingList.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     http_method_names = ['delete', 'post', 'get']
 
     def get_object(self):
@@ -176,10 +199,9 @@ class ShoppingListViewset(viewsets.ModelViewSet):
                     ingredient_amount.amount, ingredient_amount.ingredient.measurement_unit
                 ]
         lines = []
-        for ingredient_name, amount in summarized_ingredients.items(): # тут можно убрать дополнительный обход
+        for ingredient_name, amount in summarized_ingredients.items():
             lines.append(f'Ингредиент: {ingredient_name}, Количество: {amount[0]} {amount[1]}')
         response_content = '\n'.join(lines)
         response = HttpResponse(response_content, content_type="text/plain,charset=utf8")
         response['Content-Disposition'] = 'attachment; filename=shopping_list'
         return response
-

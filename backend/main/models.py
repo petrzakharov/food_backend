@@ -6,10 +6,9 @@ from users.models import User
 
 
 class Recipe(models.Model):
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='receipts')
-    # TODO  исправить ошибку в нейминге receipts
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recipes')
     name = models.CharField(max_length=100, unique=True)
-    image = models.ImageField(upload_to='pictures/', blank=False, null=False)
+    image = models.ImageField(upload_to='pictures/', blank=True, null=True)
     description = models.TextField()
     ingredients = models.ManyToManyField('Ingredient', through='IngredientAmount', related_name='recipes')
     tag = models.ManyToManyField('Tag', related_name='recipes')

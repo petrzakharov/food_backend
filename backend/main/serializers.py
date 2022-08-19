@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 
 from users.models import User
 from users.serializers import UserUpdatedSerializer
@@ -23,7 +22,7 @@ class RecipeFollowSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(UserUpdatedSerializer):
-    recipes = RecipeFollowSerializer(source='receipts', many=True)
+    recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -42,10 +41,16 @@ class FollowSerializer(UserUpdatedSerializer):
             raise serializers.ValidationError({'detail': 'Нельзя подписаться на самого себя'})
         return data
 
-    def get_recipes_count(self, obj):
-        return obj.receipts.count()
+    @staticmethod
+    def get_recipes_count(obj):
+        return obj.recipes.count()
 
-    # TODO проверить корректность метода get_recipes_count (возможно вынести его в модель)
+    def get_recipes(self, obj):
+        recipes_limit = self.context['request'].query_params.get('recipes_limit', None) or 10
+        paginated_recipes = obj.recipes.all()[:int(recipes_limit)]
+        serializer = RecipeFollowSerializer(paginated_recipes, many=True)
+        return serializer.data
+
     # TODO проверить корректность поля recipes (ошибка при редактировании в админке)
 
 
@@ -121,7 +126,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     text = serializers.CharField(source='description')
     image = serializers.ImageField(required=False)
 
-    #  TODO создание должно быть доступно только авторизованному пользователю
     #  TODO убрать required=False из image при тестировании на фронте
 
     class Meta:
