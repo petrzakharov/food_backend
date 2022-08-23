@@ -107,8 +107,8 @@ MEDIA_URL = '/media/'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+        # 'rest_framework.authentication.BasicAuthentication',
+        # 'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5,
@@ -117,6 +117,7 @@ REST_FRAMEWORK = {
     ],
 }
 AUTH_USER_MODEL = 'users.User'
+DJANGO_SETTINGS_MODULE = 'foodgram.settings'
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
@@ -129,4 +130,20 @@ SWAGGER_SETTINGS = {
             'in': 'header'
         }
     }
+}
+
+
+DJOSER = {
+    'LOGIN_FIELD': 'email',
+    'SERIALIZERS': {
+        'user': 'users.serializers.UserUpdatedSerializer',
+        'current_user': 'users.serializers.UserUpdatedSerializer',
+        'user_create': 'users.serializers.UserUpdatedSerializer',
+    },
+    'HIDE_USERS': False,
+    'PERMISSIONS': {
+        # 'user': ['main.permissions.OwnerOrReadOnly'],
+        'user_list': ['rest_framework.permissions.AllowAny'],
+        'user_delete': ['rest_framework.permissions.IsAdminUser'],
+    },
 }
