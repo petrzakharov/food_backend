@@ -1,11 +1,10 @@
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
-from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, viewsets, serializers, status
+from rest_framework import mixins, viewsets, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from django.db.models import Case, Value, When, BooleanField, CharField, Q
+from django.db.models import Q
 from main.models import Tag, Follow, Ingredient, Recipe, FavoriteRecipe, ShoppingList, IngredientAmount
 from main.serializers import TagSerializer, FollowSerializer, IngredientSerializer, RecipeSerializer, \
     RecipeCreateSerializer, RecipeFollowSerializer
@@ -22,29 +21,27 @@ class TagViewSet(mixins.ListModelMixin,
     permission_classes = (AllowAny,)
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    # OK
 
 
 class FollowViewSet(viewsets.ModelViewSet):
     serializer_class = FollowSerializer
     pagination_class = CustomSetPagination
     permission_classes = (IsAuthenticated,)
-    # OK
 
     def get_queryset(self):
-        followers = Follow.objects.filter(author=self.request.user).values('follower')
-        return User.objects.filter(id__in=followers)
+        authors = Follow.objects.filter(follower=self.request.user).values('author')
+        return User.objects.filter(id__in=authors)
 
     def get_serializer_context(self):
         return {
-            'author': self.request.user,
+            'follower': self.request.user,
             'request': self.request
         }
 
     def destroy(self, request, *args, **kwargs):
         queryset = Follow.objects.filter(
-            author=self.request.user,
-            follower=get_object_or_404(User, id=self.kwargs['id'])
+            follower=self.request.user,
+            author=get_object_or_404(User, id=self.kwargs['id'])
         )
         if queryset.exists():
             queryset.delete()
@@ -53,7 +50,7 @@ class FollowViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         data = self.get_serializer_context()
-        data['follower'] = get_object_or_404(User, id=self.kwargs['id'])
+        data['author'] = get_object_or_404(User, id=self.kwargs['id'])
         serializer = self.serializer_class(data=request.data, context=data)
         if serializer.is_valid():
             serializer.save()
@@ -131,7 +128,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
 
 class FavoriteRecipeViewSet(viewsets.ModelViewSet):
-    # OK
     queryset = FavoriteRecipe.objects.all()
     serializer_class = RecipeFollowSerializer
     http_method_names = ['post', 'delete']
@@ -159,7 +155,6 @@ class FavoriteRecipeViewSet(viewsets.ModelViewSet):
 
 
 class ShoppingListViewset(viewsets.ModelViewSet):
-    # OK
     serializer_class = RecipeFollowSerializer
     queryset = ShoppingList.objects.all()
     permission_classes = (IsAuthenticated,)

@@ -12,11 +12,11 @@ from .serializers import UserUpdatedSerializer
 class UserViewSet(DjoserUserViewSet):
     pagination_class = CustomSetPagination
     queryset = User.objects.all()
-    # OK
-    # def get_permissions(self):
-    #     if self.action == 'list':
-    #         return AllowAny(),
-    #     return super().get_permissions()
+
+    def get_permissions(self):
+        if self.action == 'list':
+            return AllowAny(),
+        return super().get_permissions()
 
     @action(detail=True, methods=['get'])
     def me(self, request, *args, **kwargs):

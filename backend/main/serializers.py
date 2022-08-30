@@ -34,7 +34,7 @@ class FollowSerializer(UserUpdatedSerializer):
         if Follow.objects.filter(**self.context).exists():
             raise serializers.ValidationError({'detail': 'Подписка уже существует'})
         Follow.objects.create(**self.context)
-        return User.objects.get(id=self.context['follower'].id)
+        return User.objects.get(id=self.context['author'].id)
 
     def validate(self, data):
         if self.context['author'] == self.context['follower']:
